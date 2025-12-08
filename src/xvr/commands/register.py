@@ -1,6 +1,5 @@
 import click
 
-
 @click.command(context_settings=dict(show_default=True, max_content_width=120))
 @click.argument(
     "xray",
@@ -197,7 +196,6 @@ def model(
     Initialize from a pose regression model.
     """
     from ..registrar import RegistrarModel
-
     registrar = RegistrarModel(
         volume,
         mask,
@@ -224,7 +222,6 @@ def model(
         saveimg,
         verbose,
     )
-
     run(registrar, xray, pattern, verbose, outpath)
 
 

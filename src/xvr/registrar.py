@@ -1,6 +1,6 @@
 from copy import deepcopy
 from pathlib import Path
-
+import numpy as np
 import matplotlib.pyplot as plt
 import torch
 from diffdrr.metrics import (
@@ -8,15 +8,29 @@ from diffdrr.metrics import (
     MultiscaleNormalizedCrossCorrelation2d,
 )
 from diffdrr.pose import convert
+from diffdrr.pose import RigidTransform
 from diffdrr.registration import Registration
 from diffdrr.visualization import plot_drr
 from torchvision.utils import save_image
 from tqdm import tqdm
 
-from xvr.dicom import _parse_dicom_pose, read_xray
+from dicom import _parse_dicom_pose, read_xray
 from xvr.model import _correct_pose, load_model, predict_pose
 from xvr.renderer import initialize_drr
 from xvr.utils import XrayTransforms
+from deepfluoro import DeepFluoroDataset
+
+
+def ap_to_pa_pose(T_ap):
+    F = np.array([
+        [1.,  0.,  0., 0.],
+        [0., -1.,  0., 0.],
+        [0.,  0., -1., 0.],
+        [0.,  0.,  0., 1.]
+    ], dtype=T_ap.dtype)
+
+    T_pa = F @ T_ap
+    return T_pa
 
 
 class _RegistrarBase:
@@ -62,7 +76,7 @@ class _RegistrarBase:
             self.volume,
             self.mask,
             self.labels,
-            self.orientation,
+            self.orientation, # default PA in initialize_drr, PA, AP or None
             height=1436,
             width=1436,
             sdd=1020.0,
@@ -246,17 +260,30 @@ class _RegistrarBase:
 
         # Run the registration
         gt, intrinsics, drr, init_pose, final_pose, kwargs = self.run(i2d, beta=beta)
-
         # Generate DRRs from the initial and final pose estimates
+        id_number = int(str(i2d).split("/")[-1].split(".")[0])
+        specimen = DeepFluoroDataset(1, filename="/nas2/home/yuhao/code/xvr/data/ipcai_2020_full_res_data.h5")
+        isocenter_pose = specimen.isocenter_pose
         if self.saveimg:
             init_img = drr(init_pose).detach().cpu()
             if final_pose is not None:
                 final_img = drr(final_pose).detach().cpu()
             else:
                 final_img = None
+            gt_pose = specimen[id_number][1].get_matrix().numpy()[0].T
+            gt_pose_rigid = RigidTransform(torch.from_numpy(gt_pose).float().cuda())
+            # isocenter_rot = torch.tensor([[torch.pi / 2, 0.0, -torch.pi / 2]]).float().cuda()
+            # isocenter_xyz = torch.tensor(specimen.volume.shape) * specimen.spacing / 2
+            # isocenter_rot = torch.tensor([[torch.pi / 2, 0.0, -torch.pi / 2]]).float().cuda()
+            isocenter_rot = torch.tensor([[0.0, 0.0, 0.0]]).float().cuda()
+            isocenter_xyz = torch.tensor([0, (specimen.volume.shape[1]) * specimen.spacing[0] / 2, 0])
+            isocenter_xyz = isocenter_xyz.unsqueeze(0).float().cuda()
+            isocenter_pose = convert(isocenter_rot, isocenter_xyz, parameterization="euler_angles", convention="ZYX")
+            gt_img = drr(isocenter_pose).detach().cpu()
         else:
             init_img = None
             final_img = None
+            gt_img = None
 
         init_pose = init_pose.matrix.detach().cpu()
         if final_pose is not None:
@@ -268,6 +295,7 @@ class _RegistrarBase:
             gt,
             init_img,
             final_img,
+            gt_img,
             i2d,
             intrinsics,
             init_pose,
@@ -281,6 +309,7 @@ class _RegistrarBase:
         gt,
         init_img,
         final_img,
+        gt_img,
         i2d,
         intrinsics,
         init_pose,
@@ -330,6 +359,7 @@ class _RegistrarBase:
         torch.save(parameters, f"{savepath}/parameters.pt")
         if self.saveimg:
             save_image(gt, f"{savepath}/gt.png", normalize=True)
+            save_image(gt_img, f"{savepath}/gt_img_rendered_by_deepfluoro.png", normalize=True)
             save_image(init_img, f"{savepath}/init_img.png", normalize=True)
             if final_img is not None:
                 save_image(final_img, f"{savepath}/final_img.png", normalize=True)
@@ -412,7 +442,8 @@ class RegistrarModel(_RegistrarBase):
         gt, sdd, delx, dely, x0, y0, pf_to_af = read_xray(
             i2d, self.crop, self.subtract_background, self.linearize, self.reducefn
         )
-
+        # Parse the pose from dicom parameters
+        pose = _parse_dicom_pose(i2d, self.orientation).cuda()
         # Predict the pose of the X-ray image
         init_pose = predict_pose(self.model, self.config, gt, sdd, delx, dely, x0, y0)
 

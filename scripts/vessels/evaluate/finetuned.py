@@ -1,42 +1,61 @@
 from pathlib import Path
 from subprocess import run
 
-import submitit
+# import submitit
 
 
-def main(ckptpath):
+def main(model):
     dir = Path(__file__).parents[3]
 
-    subject_id = str(ckptpath.parent).split("/")[-1]
-    epoch = ckptpath.stem.split("_")[-1]
+    # subject_id = str(ckptpath.parent).split("/")[-1]
+    # epoch = ckptpath.stem.split("_")[-1]
 
+    # command = f"""
+    # xvr register model \
+    #     {dir}/data/ljubljana/{subject_id}/xrays \
+    #     -v {dir}/data/ljubljana/{subject_id}/volume.nii.gz \
+    #     -c {dir / ckptpath} \
+    #     -o {dir}/results/ljubljana/evaluate/finetuned/{subject_id}/{epoch} \
+    #     --linearize \
+    #     --subtract_background \
+    #     --pattern *[!_max].dcm \
+    #     --init_only \
+    #     --verbose 0
+    # """
+
+    subject_id = str(model).split("/")[-1].split(".")[0].replace("ljubljana", "subject")
     command = f"""
     xvr register model \
         {dir}/data/ljubljana/{subject_id}/xrays \
         -v {dir}/data/ljubljana/{subject_id}/volume.nii.gz \
-        -c {dir / ckptpath} \
-        -o {dir}/results/ljubljana/evaluate/finetuned/{subject_id}/{epoch} \
+        -c {dir / model} \
+        -o {dir}/results/ljubljana/evaluate/finetuned/{subject_id} \
         --linearize \
         --subtract_background \
         --pattern *[!_max].dcm \
         --init_only \
         --verbose 0
     """
+
     command = command.strip().split()
     run(command, check=True)
 
 
 if __name__ == "__main__":
-    ckptpath = Path("models/vessels/finetuned").rglob("*.pth")
+    # models = list(Path("models/vessels/finetuned").glob("**/*8.pth"))
 
-    executor = submitit.AutoExecutor(folder="logs")
-    executor.update_parameters(
-        name="xvr-vessels-eval-finetuned",
-        gpus_per_node=1,
-        mem_gb=10.0,
-        slurm_array_parallelism=6,
-        slurm_partition="polina-2080ti",
-        slurm_qos="vision-polina-main",
-        timeout_min=10_000,
-    )
-    jobs = executor.map_array(main, ckptpath)
+    # executor = submitit.AutoExecutor(folder="logs")
+    # executor.update_parameters(
+    #     name="xvr-vessels-register-finetuned",
+    #     gpus_per_node=1,
+    #     mem_gb=10.0,
+    #     slurm_array_parallelism=10,
+    #     slurm_partition="polina-2080ti",
+    #     slurm_qos="vision-polina-main",
+    #     timeout_min=10_000,
+    # )
+    # jobs = executor.map_array(main, models)
+
+    models = list(Path("models/vessels/finetuned").glob("**/*.pth"))
+    for m in models:
+        main(m)

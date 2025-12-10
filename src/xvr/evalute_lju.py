@@ -27,35 +27,20 @@ def load_regis_model(subject_id, regime):
         volume=datapath / "volume.nii.gz",
         mask=None,
         ckptpath=model_path,
-        crop=100,
-        subtract_background=True,
-        linearize=True,
-        reducefn="max",
-        invert=False,
-        scales="15,7.5,5",
-        reverse_x_axis=True,
-        renderer="siddon",
-        parameterization="euler_angles",
-        convention="ZXY",
-        lr_rot=1e-2,
-        lr_xyz=1e0,
-        patience=10,
-        threshold=1e-4,
-        max_n_itrs=50,              # debug 时可降低迭代
-        max_n_plateaus=2,
-        init_only=False,
+        linearize=True,            # Convert X-rays from exponential to log form
+        subtract_background=True,  # Subtract the mean intensity from input X-rays
+        reverse_x_axis=False,      # Flip the horizontal axis of the image
+        scales="15,7.5,5",         # Downsampling scales for multiscale pose refinement
+        patience=5,                # Number of allowed iterations with no improvement
+        max_n_itrs=50,             # Number of iterations per scale
         saveimg=True,
-        verbose=0,
     )
 
     return model, datapath
 
 
-regimes = ["patient_specific", "patient_agnostic", "finetuned"]
-
+regimes = ["finetuned", "patient_specific", "patient_agnostic"]
 dfs = []
-
-
 final_pose_dicts = {regime: {} for regime in regimes}
 true_pose_dicts  = {regime: {} for regime in regimes}
 for regime in regimes:
@@ -67,7 +52,6 @@ for regime in regimes:
         true_pose_dicts[regime][subj_key] = []
 
         model, datapath = load_regis_model(subject_id, regime)
-        xrays = datapath / "xrays"
 
         fiducials = torch.load(datapath / "fiducials.pt", weights_only=False).cuda()
         evaluator = Evaluator(model.drr, fiducials)
@@ -76,8 +60,9 @@ for regime in regimes:
         true_poses = []
 
         print(f"Evaluating Subject {subject_id} ({subj_key}) ...")
-        for img, gt in tqdm(list(zip(sorted(xrays.glob("*.dcm")),
-                                     sorted(xrays.glob("*.pt"))))):
+        for view in ["frontal", "lateral"]:
+            img = datapath / "xrays" / f"{view}.dcm"
+            gt = datapath / "xrays" / f"{view}.pt"
             true_pose = RigidTransform(torch.load(gt, weights_only=False)["pose"])
             _, _, _, init_pose, final_pose, _ = model.run(img, beta=0.5)
             final_cpu = final_pose.cpu()
@@ -92,7 +77,6 @@ for regime in regimes:
         true_poses = RigidTransform(torch.concat(true_poses)).cuda()
 
         metrics = evaluator(true_poses, pred_poses)
-
         df = pd.DataFrame(metrics, columns=["mPD", "mRPE", "mTRE", "dGeo"])
         df["xray"] = range(len(metrics))
         df["subject"] = subject_id
@@ -100,7 +84,7 @@ for regime in regimes:
         dfs.append(df)
 
 
-out_dir = "/nas2/home/yuhao/code/xvr/eval_results/lju"
+out_dir = "/nas2/home/yuhao/code/xvr/eval_results_new/lju"
 df = pd.concat(dfs)
 df.to_csv(f"{out_dir}/eval_results.csv", index=False)
 

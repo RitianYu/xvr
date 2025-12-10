@@ -42,8 +42,8 @@ def load_regis_model(subject_id, regime):
         lr_xyz=1e0,
         patience=10,
         threshold=1e-4,
-        max_n_itrs=50, 
-        max_n_plateaus=2,
+        max_n_itrs=500, 
+        max_n_plateaus=3,
         init_only=False,
         saveimg=True,
         verbose=2,
@@ -52,7 +52,7 @@ def load_regis_model(subject_id, regime):
     return model, datapath
 
 
-regimes = ["patient_specific", "patient_agnostic", "finetuned"]
+regimes = ["patient_specific", "finetuned"]
 
 dfs = []
 

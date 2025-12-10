@@ -243,5 +243,5 @@ pyrightconfig.json
 
 *.png
 *.jpg
-*.pkl
+# *.pkl
 *.csv

@@ -33,13 +33,13 @@ def load_regis_model(subject_id, regime):
         scales="15,7.5,5",         # Downsampling scales for multiscale pose refinement
         patience=5,                # Number of allowed iterations with no improvement
         max_n_itrs=50,             # Number of iterations per scale
-        saveimg=True,
+        # saveimg=True,
     )
 
     return model, datapath
 
 
-regimes = ["finetuned", "patient_specific", "patient_agnostic"]
+regimes = ["finetuned"]
 dfs = []
 final_pose_dicts = {regime: {} for regime in regimes}
 true_pose_dicts  = {regime: {} for regime in regimes}
@@ -84,7 +84,7 @@ for regime in regimes:
         dfs.append(df)
 
 
-out_dir = "/nas2/home/yuhao/code/xvr/eval_results_new/lju"
+out_dir = "/nas2/home/yuhao/code/xvr/eval_results/lju"
 df = pd.concat(dfs)
 df.to_csv(f"{out_dir}/eval_results.csv", index=False)
 

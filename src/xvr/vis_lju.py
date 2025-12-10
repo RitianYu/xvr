@@ -90,10 +90,10 @@ def load_regis_model(subject_id, regime="finetuned"):
 
 
 # load xvr gt pose
-with open("/nas2/home/yuhao/code/xvr/eval_results/deepfluoro/xvr_deepfluoro_finetuned_true_pose.pkl", "rb") as f:
+with open("/nas2/home/yuhao/code/xvr/eval_results/lju/xvr_lju_finetuned_true_pose.pkl", "rb") as f:
     xvr_gt_poses = pickle.load(f)
 # load pred pose
-with open("/nas2/home/yuhao/code/xvr/results/deepfluoro/xvr_deepfluoro_finetuned_init_pose.pkl", "rb") as f:
+with open("/nas2/home/yuhao/code/xvr/results/ljubljana/xvr_lju_finetuned_init_pose.pkl", "rb") as f:
     xvr_pred_poses = pickle.load(f)
 
 # Get a couple of the 3D fiducial for error visualization

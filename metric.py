@@ -1,7 +1,7 @@
 import pandas as pd
 
 
-df = pd.read_csv("/nas2/home/yuhao/code/xvr/src/xvr/eval_results_debug.csv")
+df = pd.read_csv("/nas2/home/yuhao/code/xvr/results/deepfluoro/eval_results_final_pose_xvr_deepfluoro_patient_agnostic.csv")
 
 # median by model
 medians = df.groupby('model')[['mPD','mTRE','dGeo']].median()

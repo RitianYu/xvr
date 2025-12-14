@@ -15,47 +15,34 @@ from xvr.visualization import plot_registration
 
 def load_regis_model(subject_id, regime):
     if regime == "patient_agnostic":
-        model_path = f"/nas2/home/yuhao/code/xvr/models/pelvis/{regime}/model.pth"
+        model_path = f"/nas2/home/yuhao/code/xvr/models/vessels/{regime}/model.pth"
     else:
-        model_path = f"/nas2/home/yuhao/code/xvr/models/pelvis/{regime}/deepfluoro{subject_id:02d}.pth"
+        model_path = f"/nas2/home/yuhao/code/xvr/models/vessels/{regime}/ljubljana{subject_id:02d}.pth"
         
-    data = f"deepfluoro/subject{subject_id:02d}/"
+    data = f"ljubljana/subject{subject_id:02d}/"
     datapath = Path("/nas2/home/yuhao/code/xvr/data") / data
 
     model = RegistrarModel(
         volume=datapath / "volume.nii.gz",
-        mask=datapath / "mask.nii.gz",
+        mask=None,
         ckptpath=model_path,
-        labels="1,2,3,4,7", 
-        crop=100,
-        subtract_background=False,
-        linearize=True,
-        reducefn="max",
-        invert=False,
-        scales="24,12,6",
-        reverse_x_axis=True,
-        renderer="siddon",
-        parameterization="euler_angles",
-        convention="ZXY",
-        lr_rot=1e-2,
-        lr_xyz=1e0,
-        patience=10,
-        threshold=1e-4,
-        max_n_itrs=500, 
-        max_n_plateaus=3,
-        init_only=False,
-        saveimg=True,
-        verbose=2,
+        linearize=True,            # Convert X-rays from exponential to log form
+        subtract_background=True,  # Subtract the mean intensity from input X-rays
+        reverse_x_axis=False,      # Flip the horizontal axis of the image
+        scales="15,7.5,5",         # Downsampling scales for multiscale pose refinement
+        patience=5,                # Number of allowed iterations with no improvement
+        max_n_itrs=50,             # Number of iterations per scale
+        # saveimg=True,
     )
 
     return model, datapath
 
 model_type = "patient_agnostic"  # "patient_specific" or "patient_agnostic"
-with open(f"/nas2/home/yuhao/code/xvr/results/deepfluoro/xvr_deepfluoro_{model_type}_final_pose.pkl", "rb") as f:
+with open(f"/nas2/home/yuhao/code/xvr/results/ljubljana/xvr_lju_{model_type}_final_pose.pkl", "rb") as f:
     all_refine_poses = pickle.load(f)
 
 dfs = []
-for subject_id in range(1, 7):
+for subject_id in range(1, 11):
     model, datapath = load_regis_model(subject_id, model_type) 
     subj_key = f"subject{subject_id:02d}"
     refine_poses = all_refine_poses[subj_key]
@@ -66,7 +53,7 @@ for subject_id in range(1, 7):
     pred_poses = []
     true_poses = []
     for i in range(len(refine_poses)):
-        gt = datapath / "xrays" / f"{i:03d}.pt"
+        gt = datapath / "xrays/frontal.pt" if i == 0 else datapath / "xrays/lateral.pt"
         true_pose = RigidTransform(torch.load(gt, weights_only=False)["pose"])
         true_poses.append(true_pose.matrix)
         pred_poses.append(torch.from_numpy(refine_poses[i]))
@@ -82,5 +69,5 @@ for subject_id in range(1, 7):
     dfs.append(df)
 
 df = pd.concat(dfs)
-df.to_csv(f"/nas2/home/yuhao/code/xvr/results/deepfluoro/eval_results_final_pose_xvr_deepfluoro_{model_type}.csv", index=False)
+df.to_csv(f"/nas2/home/yuhao/code/xvr/results/ljubljana/eval_results_final_pose_xvr_lju_{model_type}.csv", index=False)
 print("\nAll results saved successfully!")

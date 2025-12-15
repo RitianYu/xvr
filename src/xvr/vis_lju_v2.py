@@ -103,44 +103,49 @@ with open("/nas2/home/yuhao/code/DiffPose/diffpose_deepfluoro_final_pose.pkl", "
 with open("/nas2/home/yuhao/code/DiffPose/diffpose_deepfluoro_true_pose.pkl", "rb") as f:
     diffpose_gt_poses = pickle.load(f)
 
-method = "xvr"  # "xvr" or "diffpose"
-for idx in range(10):
-    subject_id = idx + 1
-    subj_key = f"subject{subject_id:02d}"
-    if method == "xvr":
-        pred_poses = xvr_pred_poses[subj_key]
-        gt_poses = xvr_gt_poses[subj_key]
-    elif method == "diffpose":
-        pred_poses = diffpose_pred_poses[subj_key]
-        org_gt_poses = diffpose_gt_poses[subj_key]
-        gt_poses = xvr_gt_poses[subj_key]
-    else:
-        raise ValueError("Unknown method")
-    model, datapath = load_regis_model(subject_id, "finetuned")
-    fiducials = torch.load(datapath / "fiducials.pt", weights_only=False).cuda()
-    indices = [0, 25, 50, 75, 110, 150, 250, 375, 500, 750, 1000]
-    for i in range(len(gt_poses)):
-        view = "ap" if i == 0 else "lat"
-        img = datapath / "xrays/frontal.dcm" if i == 0 else datapath / "xrays/lateral.dcm"
-        gt, _, _, _, _, _, _, _ = model.initialize_pose(img)
-        gt_pose = gt_poses[i]
-        gt_pose = RigidTransform(gt_pose).cuda()
-        
-        if method == "xvr":
-            pred_pose = pred_poses[i]
-            pred_pose = RigidTransform(torch.from_numpy(pred_pose)).cuda()
-        else:
-            org_gt_pose = org_gt_poses[i]
-            org_gt_pose = RigidTransform(torch.from_numpy(org_gt_pose)).cuda()
-            # 计算从原方法坐标系到xvr坐标系的变换矩阵
-            # T_xvr_to_org = gt_pose @ org_gt_pose.inverse()
-            T_xvr_to_org = gt_pose.compose(org_gt_pose.inverse())
-            # 将pred_pose从原方法坐标系转换到xvr坐标系
-            pred_pose_org = pred_poses[i]
-            pred_pose_org = RigidTransform(torch.from_numpy(pred_pose_org)).cuda()
-            pred_pose = T_xvr_to_org.compose(pred_pose_org)
+xvr_gt_pose = xvr_gt_poses["subject04"][23]
+xvr_pred_pose = xvr_pred_poses["subject04"][23]
+diffpose_gt_pose = diffpose_gt_poses["subject04"][23]
+diffpose_pred_pose = diffpose_pred_poses["subject04"][23]
+ours_gt_pose = np.array([[-6.6595594e-03,  2.2345352e-01, -9.7469169e-01,  2.3340295e+02]
+                    [ 9.9938536e-01, -3.2059167e-02, -1.4178041e-02,  3.6855161e+02]
+                    [-3.4415815e-02, -9.7418731e-01, -2.2310278e-01,  1.9730029e+02]
+                    [ 0.0000000e+00,  0.0000000e+00,  0.0000000e+00,  1.0000000e+00]])
+ours_pose = np.array([[-7.6367264e-03, 2.2336294e-01, -9.7470528e-01, 2.3307372e+02],
+                      [ 9.9935824e-01, -3.2406747e-02, -1.5256212e-02, 3.6919470e+02],
+                      [-3.4994580e-02, -9.7419661e-01, -2.2297221e-01 ,1.9707440e+02],
+                      [ 0.0000000e+00, 0.0000000e+00, 0.0000000e+00, 1.0000000e+00]])
+roma_pose = np.array([[ 3.0052885e-03,  2.2452125e-01, -9.7446442e-01,  2.3662077e+02]
+                      [ 9.9995452e-01, -9.4896518e-03,  8.9741865e-04,  3.6271997e+02]
+                      [-9.0457201e-03, -9.7442311e-01, -2.2453967e-01,  2.0729166e+02]
+                      [ 0.0000000e+00,  0.0000000e+00,  0.0000000e+00,  1.0000000e+00]])
 
-        # plot
-        save_path = f"/nas2/home/yuhao/code/xvr/figures/deepfluoro/subject{subject_id:02d}_view{i:03d}_registration.png"
-        os.makedirs(os.path.dirname(save_path), exist_ok=True)
-        plot_registration(model.drr, fiducials[:, indices], gt, pred_pose, gt_pose, save_path)
+method = "xvr"
+model, datapath = load_regis_model(1, "finetuned")
+img = datapath / "xrays/lateral.dcm"
+gt, _, _, _, _, _, _, _ = model.initialize_pose(img)
+# Load the ground truth 3D fiducials
+fiducials = torch.load(datapath / "fiducials.pt", weights_only=False).cuda()
+indices = [0, 25, 50, 75, 110, 150, 250, 375, 500, 750, 1000]
+
+if method == "xvr":
+    gt_pose = RigidTransform(xvr_gt_pose).cuda()
+    pred_pose = RigidTransform(torch.from_numpy(xvr_pred_pose)).cuda()
+else: 
+    # 计算从原方法坐标系到xvr坐标系的变换矩阵
+    gt_pose = RigidTransform(xvr_gt_pose).cuda()
+    org_gt_pose = RigidTransform(torch.from_numpy(ours_gt_pose)).cuda()
+    T_xvr_to_org = gt_pose.compose(org_gt_pose.inverse())
+    # 将pred_pose从原方法坐标系转换到xvr坐标系
+    if method == "diffpose":
+        pred_pose_org = RigidTransform(torch.from_numpy(diffpose_pred_pose)).cuda()
+    if method == "roma":
+        pred_pose_org = RigidTransform(torch.from_numpy(roma_pose)).cuda()
+    if method == "ours":
+        pred_pose_org = RigidTransform(torch.from_numpy(ours_pose)).cuda()
+    pred_pose = T_xvr_to_org.compose(pred_pose_org)
+
+# plot
+save_path = f"/nas2/home/yuhao/code/xvr/figures/lju/subject1_lat_registration.png"
+os.makedirs(os.path.dirname(save_path), exist_ok=True)
+plot_registration(model.drr, fiducials, gt, pred_pose, gt_pose, save_path)

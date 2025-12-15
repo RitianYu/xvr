@@ -50,8 +50,8 @@ def load_regis_model(subject_id, regime):
 
     return model, datapath
 
-model_type = "patient_agnostic"  # "patient_specific" or "patient_agnostic"
-with open(f"/nas2/home/yuhao/code/xvr/results/deepfluoro/xvr_deepfluoro_{model_type}_final_pose.pkl", "rb") as f:
+model_type = "finetuned"  # "patient_specific" or "patient_agnostic"
+with open(f"/nas2/home/yuhao/code/xvr/results/deepfluoro/xvr_deepfluoro_{model_type}_init_pose.pkl", "rb") as f:
     all_refine_poses = pickle.load(f)
 
 dfs = []
@@ -82,5 +82,5 @@ for subject_id in range(1, 7):
     dfs.append(df)
 
 df = pd.concat(dfs)
-df.to_csv(f"/nas2/home/yuhao/code/xvr/results/deepfluoro/eval_results_final_pose_xvr_deepfluoro_{model_type}.csv", index=False)
+df.to_csv(f"/nas2/home/yuhao/code/xvr/results/deepfluoro/eval_results_init_pose_xvr_deepfluoro_{model_type}.csv", index=False)
 print("\nAll results saved successfully!")

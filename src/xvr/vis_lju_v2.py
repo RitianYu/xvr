@@ -103,22 +103,57 @@ with open("/nas2/home/yuhao/code/DiffPose/diffpose_deepfluoro_final_pose.pkl", "
 with open("/nas2/home/yuhao/code/DiffPose/diffpose_deepfluoro_true_pose.pkl", "rb") as f:
     diffpose_gt_poses = pickle.load(f)
 
-xvr_gt_pose = xvr_gt_poses["subject04"][23]
-xvr_pred_pose = xvr_pred_poses["subject04"][23]
-diffpose_gt_pose = diffpose_gt_poses["subject04"][23]
-diffpose_pred_pose = diffpose_pred_poses["subject04"][23]
-ours_gt_pose = np.array([[-6.6595594e-03,  2.2345352e-01, -9.7469169e-01,  2.3340295e+02]
-                    [ 9.9938536e-01, -3.2059167e-02, -1.4178041e-02,  3.6855161e+02]
-                    [-3.4415815e-02, -9.7418731e-01, -2.2310278e-01,  1.9730029e+02]
-                    [ 0.0000000e+00,  0.0000000e+00,  0.0000000e+00,  1.0000000e+00]])
-ours_pose = np.array([[-7.6367264e-03, 2.2336294e-01, -9.7470528e-01, 2.3307372e+02],
-                      [ 9.9935824e-01, -3.2406747e-02, -1.5256212e-02, 3.6919470e+02],
-                      [-3.4994580e-02, -9.7419661e-01, -2.2297221e-01 ,1.9707440e+02],
-                      [ 0.0000000e+00, 0.0000000e+00, 0.0000000e+00, 1.0000000e+00]])
-roma_pose = np.array([[ 3.0052885e-03,  2.2452125e-01, -9.7446442e-01,  2.3662077e+02]
-                      [ 9.9995452e-01, -9.4896518e-03,  8.9741865e-04,  3.6271997e+02]
-                      [-9.0457201e-03, -9.7442311e-01, -2.2453967e-01,  2.0729166e+02]
+# specimen-1 
+xvr_gt_pose = xvr_gt_poses["subject01"][1]
+org_gt_pose = diffpose_gt_poses["specimen_1"][1]
+ours_zeroshot_pose = np.array([[-9.9980837e-01, -2.2383314e-03, -1.9429363e-02, -4.4289948e+01],
+                                [ 1.9442350e-02, -6.2415954e-03, -9.9979180e-01,  1.1688117e+02],
+                                [ 2.1171235e-03, -9.9997783e-01,  6.2847910e-03,  9.1103371e+01],
+                                [ 0.0000000e+00,  0.0000000e+00,  0.0000000e+00,  1.0000000e+00]])
+
+ours_pose = np.array([[-9.9983215e-01,  4.0400508e-04, -1.8297276e-02, -4.1272644e+01],
+                      [ 1.8295093e-02, -3.5081902e-03, -9.9982673e-01,  1.1597821e+02],
+                      [-4.6759733e-04, -9.9999356e-01,  3.5010795e-03,  9.1007309e+01],
                       [ 0.0000000e+00,  0.0000000e+00,  0.0000000e+00,  1.0000000e+00]])
+
+roma_pose = np.array([[-9.9979508e-01,  4.0328964e-03, -1.9816289e-02, -2.7944374e+01],
+                      [ 1.9795354e-02, -5.0070072e-03, -9.9979180e-01,  1.1645459e+02],
+                      [-4.1307467e-03, -9.9997908e-01,  4.9270173e-03,  9.1511574e+01],
+                      [ 0.0000000e+00,  0.0000000e+00,  0.0000000e+00,  1.0000000e+00]])
+
+# # specimen-2
+# xvr_gt_pose = xvr_gt_poses["subject02"][1]
+# org_gt_pose = diffpose_gt_poses["specimen_2"][1]
+# ours_zeroshot_pose = np.array([[-9.99559879e-01, -3.53437359e-03, -2.94549037e-02,  2.18611088e+01],
+#                                 [ 2.94432566e-02,  3.30320443e-03, -9.99561012e-01,  1.06093155e+02],
+#                                 [ 3.63011751e-03, -9.99988317e-01, -3.19768721e-03,  9.10738983e+01],
+#                                 [ 0.00000000e+00,  0.00000000e+00,  0.00000000e+00,  1.00000000e+00]]
+#                                 )
+# ours_pose = np.array([[-9.9958503e-01,  9.8504068e-05, -2.8821087e-02,  1.8513218e+01],
+#                       [ 2.8820643e-02,  7.1755238e-04, -9.9958462e-01,  1.0593500e+02],
+#                       [-7.7455486e-05, -1.0000002e+00, -7.1943889e-04,  9.1044281e+01],
+#                       [ 0.0000000e+00,  0.0000000e+00,  0.0000000e+00,  1.0000000e+00]])
+# roma_pose = np.array([[-9.99415696e-01, -5.24871517e-04, -3.41886170e-02,  1.47406406e+01],
+#                     [ 3.41888033e-02, -1.36083621e-03, -9.99414682e-01,  1.05116486e+02],
+#                     [ 4.78367030e-04, -9.99999464e-01,  1.37863937e-03,  9.06689911e+01],
+#                     [ 0.00000000e+00,  0.00000000e+00,  0.00000000e+00,  1.00000000e+00]])
+
+# # specimen-6
+# xvr_gt_pose = xvr_gt_poses["subject06"][1]
+# org_gt_pose = diffpose_gt_poses["specimen_6"][1]
+# ours_zeroshot_pose = np.array([[-9.99924362e-01,  6.46424713e-04, -1.22781228e-02, -3.72666893e+01],
+#                                [ 1.22776488e-02, -5.72025310e-04, -9.99924898e-01,  1.18099625e+02],
+#                                [-6.53781055e-04, -1.00000024e+00,  5.64005342e-04,  9.28364563e+01],
+#                                [ 0.00000000e+00,  0.00000000e+00,  0.00000000e+00,  1.00000000e+00]])
+# ours_pose = np.array([[-9.9993736e-01, -1.8212531e-03, -1.1039609e-02, -3.3871609e+01],
+#                       [ 1.1044299e-02, -2.6442530e-03, -9.9993587e-01,  1.1808441e+02],
+#                       [ 1.7915609e-03, -9.9999535e-01,  2.6641614e-03,  9.2170113e+01],
+#                       [ 0.0000000e+00,  0.0000000e+00,  0.0000000e+00,  1.0000000e+00]])
+# roma_pose = np.array([[-9.9984431e-01, -3.9787744e-03, -1.7189713e-02, -4.0651978e-01],
+#                       [ 1.7214814e-02, -6.3913334e-03, -9.9983180e-01,  1.1862542e+02],
+#                       [ 3.8678544e-03, -9.9997216e-01,  6.4587914e-03,  9.2349419e+01],
+#                       [ 0.0000000e+00,  0.0000000e+00,  0.0000000e+00,  1.0000000e+00]])
+
 
 method = "xvr"
 model, datapath = load_regis_model(1, "finetuned")
@@ -128,22 +163,18 @@ gt, _, _, _, _, _, _, _ = model.initialize_pose(img)
 fiducials = torch.load(datapath / "fiducials.pt", weights_only=False).cuda()
 indices = [0, 25, 50, 75, 110, 150, 250, 375, 500, 750, 1000]
 
-if method == "xvr":
-    gt_pose = RigidTransform(xvr_gt_pose).cuda()
-    pred_pose = RigidTransform(torch.from_numpy(xvr_pred_pose)).cuda()
-else: 
-    # 计算从原方法坐标系到xvr坐标系的变换矩阵
-    gt_pose = RigidTransform(xvr_gt_pose).cuda()
-    org_gt_pose = RigidTransform(torch.from_numpy(ours_gt_pose)).cuda()
-    T_xvr_to_org = gt_pose.compose(org_gt_pose.inverse())
-    # 将pred_pose从原方法坐标系转换到xvr坐标系
-    if method == "diffpose":
-        pred_pose_org = RigidTransform(torch.from_numpy(diffpose_pred_pose)).cuda()
-    if method == "roma":
-        pred_pose_org = RigidTransform(torch.from_numpy(roma_pose)).cuda()
-    if method == "ours":
-        pred_pose_org = RigidTransform(torch.from_numpy(ours_pose)).cuda()
-    pred_pose = T_xvr_to_org.compose(pred_pose_org)
+# 计算从原方法坐标系到xvr坐标系的变换矩阵
+gt_pose = RigidTransform(xvr_gt_pose).cuda()
+org_gt_pose = RigidTransform(torch.from_numpy(org_gt_pose)).cuda()
+T_xvr_to_org = gt_pose.compose(org_gt_pose.inverse())
+# 将pred_pose从原方法坐标系转换到xvr坐标系
+if method == "roma":
+    pred_pose_org = RigidTransform(torch.from_numpy(roma_pose)).cuda()
+if method == "ours":
+    pred_pose_org = RigidTransform(torch.from_numpy(ours_pose)).cuda()
+if method == "ours_zeroshot":
+    pred_pose_org = RigidTransform(torch.from_numpy(ours_zeroshot_pose)).cuda()
+pred_pose = T_xvr_to_org.compose(pred_pose_org)
 
 # plot
 save_path = f"/nas2/home/yuhao/code/xvr/figures/lju/subject1_lat_registration.png"
